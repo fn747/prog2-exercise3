@@ -2,91 +2,85 @@ package weather.ctrl;
 
 
 import tk.plogitech.darksky.api.jackson.DarkSkyJacksonClient;
-import tk.plogitech.darksky.forecast.APIKey;
-import tk.plogitech.darksky.forecast.ForecastRequest;
-import tk.plogitech.darksky.forecast.ForecastRequestBuilder;
-import tk.plogitech.darksky.forecast.GeoCoordinates;
-import tk.plogitech.darksky.forecast.model.*;
+import tk.plogitech.darksky.forecast.*;
+import tk.plogitech.darksky.forecast.model.Forecast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class WeatherController {
 
-    private String apiKey = "ab5c55091bfde0864c41b337f1c66af5";;
-    private DarkSkyJacksonClient client = new DarkSkyJacksonClient();
-
-    public void process(GeoCoordinates location) {
-        System.out.println("process "+location); //$NON-NLS-1$
-        //Forecast data = getData();
-
-        //https://github.com/fn747/prog2-exercise3
-
-        //TODO implement Error handling
-
-        //TODO implement methods for
-        // highest temperature
-        // average temperature
-        // count the daily values
-
-        Forecast forecast = my_try_catch(client,apiRequest(apiKey,location));
-        double highTemp = getHighestTemp(location);
-        double averageTemp = getAverageTemp(location);
+    public static String apiKey = "ab5c55091bfde0864c41b337f1c66af5";
 
 
-        // implement a Comparator for the Windspeed
+    public void process(List<GeoCoordinates> location) throws MyExecption {
+        List<Forecast> data = getData(location);
+        List<GeoCoordinates> listOfCity = new ArrayList<>();
+        try{
+            for (var item : data) {
+                Double highestTemp = getHighestTemp(item);
+                Double averageTemp = getAverageTemp(item);
+                Double highestWind = getHighestWind(item);
+            }
 
-    }
-    public Forecast my_try_catch(DarkSkyJacksonClient client, ForecastRequest forecastRequest) {
-        Forecast forecast = new Forecast();
-        try {
-            forecast = client.forecast(forecastRequest);
+            for (var item : location) {
+                listOfCity.add(item);
+            }
 
+            SequentialDownloader sequentialDownloader = new SequentialDownloader();
+            sequentialDownloader.process(listOfCity);
+
+            ParallelDownloader parallelDownloader = new ParallelDownloader();
+            parallelDownloader.process(listOfCity);
+
+        }catch (Exception e){
+            throw new MyExecption();
         }
-        catch (Exception e) {
-            System.out.println("try_catch_test error");
+    }
+
+    private double  getHighestTemp(Forecast data) {
+        double getHighestTempDouble;
+        getHighestTempDouble = data.getDaily().getData().stream().mapToDouble(temp-> temp.getTemperatureHigh()).max().getAsDouble();
+        System.out.println("Höchste Temperatur der letzten Tage : " + getHighestTempDouble);
+        return getHighestTempDouble;
+    }
+
+    private double  getAverageTemp(Forecast data) {
+        double getAvarageTempDouble;
+        getAvarageTempDouble = data.getDaily().getData().stream().mapToDouble(temp-> temp.getTemperatureHigh()).average().getAsDouble();
+        System.out.println("Durchsnittliche Temperatur der letzten Tage : " + getAvarageTempDouble);
+        return getAvarageTempDouble;
+    }
+
+    private double  getHighestWind(Forecast data) {
+        double getHighestWindDouble;
+        getHighestWindDouble = data.getHourly().getData().stream().mapToDouble(temp-> temp.getWindSpeed()).max().getAsDouble();
+        System.out.println("Höchste Windgeschwindigkeit der letzten Tage : " + getHighestWindDouble);
+        return getHighestWindDouble;
+
+    }
+
+
+
+
+    public List<Forecast> getData(List<GeoCoordinates> location) throws MyExecption {
+        List<Forecast> forecasts = new ArrayList<>();
+        for (var city : location) {
+            ForecastRequest request = new ForecastRequestBuilder()
+                    .key(new APIKey(apiKey))
+                    .location(city)
+                    .build();
+
+            DarkSkyJacksonClient client = new DarkSkyJacksonClient();
+
+            try {
+                Forecast forecast = client.forecast(request);
+                forecasts.add(forecast);
+                return forecasts;
+            } catch (ForecastException e) {
+                throw new MyExecption();
+            }
         }
-        return forecast;
-    }
-    public ForecastRequest apiRequest(String apiKey, GeoCoordinates location) {
-        ForecastRequest request = new ForecastRequestBuilder()
-                .key(new APIKey("ab5c55091bfde0864c41b337f1c66af5"))
-                .location(location)
-                .build();
-
-        return request;
-    }
-    public Double getHighestTemp(GeoCoordinates location) {
-
-        DarkSkyJacksonClient client = new DarkSkyJacksonClient();
-        Forecast forecast = my_try_catch(client,apiRequest(apiKey,location));
-        List<DailyDataPoint> dailyDataPoints = forecast.getDaily().getData();
-
-        return dailyDataPoints.stream().mapToDouble(DailyDataPoint::getTemperatureHigh).max().orElseThrow();
-    }
-
-    public Double getAverageTemp(GeoCoordinates location) {
-
-        DarkSkyJacksonClient client = new DarkSkyJacksonClient();
-        Forecast forecast = my_try_catch(client,apiRequest(apiKey,location));
-        List<DailyDataPoint> dailyDataPoints = forecast.getDaily().getData();
-
-        return dailyDataPoints.stream().mapToDouble(DailyDataPoint::getTemperatureHigh).average().orElseThrow();
-    }
-
-    public GeoCoordinates getLocation(Longitude x, Latitude y) {
-        return new GeoCoordinates(x,y);
-    }
-
-
-
-    public static void main(String[] args) {
-        WeatherController wc = new WeatherController();
-
-        Longitude x = new Longitude(40.0);
-        Latitude y = new Latitude(18.0);
-
-        GeoCoordinates location = wc.getLocation(x,y);
-        System.out.println(wc.getHighestTemp(location));
-        System.out.println(wc.getAverageTemp(location));
+        return null;
     }
 }

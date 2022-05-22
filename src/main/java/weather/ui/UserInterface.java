@@ -1,89 +1,109 @@
 package weather.ui;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Scanner;
-
 import tk.plogitech.darksky.forecast.GeoCoordinates;
 import tk.plogitech.darksky.forecast.model.Latitude;
 import tk.plogitech.darksky.forecast.model.Longitude;
+import weather.ctrl.MyExecption;
 import weather.ctrl.WeatherController;
 
-public class UserInterface
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Scanner;
+
+public class UserInterface 
 {
 
 	private WeatherController ctrl = new WeatherController();
-	private Longitude x;
-	private Latitude y;
-	//GeoCoordinates location;
+	List<GeoCoordinates> cities = new ArrayList<>();
 
 	public void getWeatherForCity1(){
-		this.x = new Longitude(25.0);
-		this.y = new Latitude(18.0);
-		//DONE enter the coordinates
-		ctrl.process(ctrl.getLocation(this.x,this.y));
-
+		GeoCoordinates location = new GeoCoordinates(new Longitude(20.457237), new Latitude(44.787197));
+		try {
+			cities.add(location);
+			ctrl.process(cities);
+		} catch (MyExecption e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	public void getWeatherForCity2(){
-		//DONE enter the coordinates
-		this.x = new Longitude(35.0);
-		this.y = new Latitude(20.0);
-		ctrl.process(ctrl.getLocation(this.x,this.y));
-
+		GeoCoordinates location = new GeoCoordinates(new Longitude(45.3523), new Latitude(35.6023));
+		try {
+			cities.add(location);
+			ctrl.process(cities);
+		} catch (MyExecption e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	public void getWeatherForCity3(){
-		//DONE enter the coordinates
-		this.x = new Longitude(45.0);
-		this.y = new Latitude(40.0);
-		ctrl.process(ctrl.getLocation(this.x,this.y));
-
+		GeoCoordinates location = new GeoCoordinates(new Longitude(16.373819),new Latitude(48.208176));
+		try {
+			cities.add(location);
+			ctrl.process(cities);
+		} catch (MyExecption e) {
+			System.out.println(e.getMessage());
+		}
 	}
-
+	
 	public void getWeatherByCoordinates() {
-		//DONE read the coordinates from the cmd
-		//DONE enter the coordinates
-		System.out.println("Please enter longitude:");
-		Scanner enter_longitude = new Scanner(System.in);
-		double enter_long = enter_longitude.nextDouble();
-		Longitude longitude_console = new Longitude(enter_long);
-
-		System.out.println("Please enter latitude:");
-		Scanner enter_latitude = new Scanner(System.in);
-		double enter_lat = enter_latitude.nextDouble();
-		Latitude latitude_console = new Latitude(enter_lat);
-
-		GeoCoordinates console = new GeoCoordinates(longitude_console, latitude_console);
-
-		ctrl.process(console);
-
+		Scanner scanner = new Scanner(System.in).useLocale(Locale.US);
+		System.out.print("Longitude: ");
+		Double longitude = scanner.nextDouble();
+		System.out.print("Latitude: ");
+		Double latitude = scanner.nextDouble();
+		GeoCoordinates location = new GeoCoordinates(new Longitude(longitude),new Latitude(latitude));
+		try {
+			cities.add(location);
+			ctrl.process(cities);
+		} catch (MyExecption e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
-	@Override
-	public String toString() {
-		return "highest temp: " + ctrl.getHighestTemp(ctrl.getLocation(this.x, this.y)) +
-				"average temp: " + ctrl.getAverageTemp(ctrl.getLocation(this.x, this.y));
+	public void downLoadWeatherByCoordinates() {
+		Scanner scanner = new Scanner(System.in).useLocale(Locale.US);
+		System.out.print("Choose number of cities: ");
+		int numberOfCities = scanner.nextInt();
+		Double longitude = 0.0;
+		Double latitude = 0.0;
+		for(int i = 1; i <= numberOfCities; i++){
+			System.out.print(String.format("Please enter Longitude of city %s: ",i));
+			longitude = scanner.nextDouble();
+			System.out.print(String.format("Please enter Latitude of city %s: ",i));
+			latitude = scanner.nextDouble();
+			GeoCoordinates location = new GeoCoordinates(new Longitude(longitude),new Latitude(latitude));
+			cities.add(location);
+		}
+		try {
+			ctrl.process(cities);
+		} catch (MyExecption e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	public void start() {
 		Menu<Runnable> menu = new Menu<>("Weather Infos");
 		menu.setTitel("Wählen Sie eine Stadt aus:");
-		menu.insert("a", "City 1", this::getWeatherForCity1);
-		menu.insert("b", "City 2", this::getWeatherForCity2);
-		menu.insert("c", "City 3", this::getWeatherForCity3);
+		menu.insert("a", "Belgrade", this::getWeatherForCity1);
+		menu.insert("b", "Tuzla", this::getWeatherForCity2);
+		menu.insert("c", "Vienna", this::getWeatherForCity3);
 		menu.insert("d", "City via Coordinates:",this::getWeatherByCoordinates);
+		menu.insert("k", "Download Tickers", this::downLoadWeatherByCoordinates);
 		menu.insert("q", "Quit", null);
 		Runnable choice;
 		while ((choice = menu.exec()) != null) {
-			choice.run();
+			 choice.run();
 		}
 		System.out.println("Program finished");
 	}
 
 
-	protected String readLine()
+	protected String readLine() 
 	{
 		String value = "\0";
 		BufferedReader inReader = new BufferedReader(new InputStreamReader(System.in));
@@ -94,7 +114,7 @@ public class UserInterface
 		return value.trim();
 	}
 
-	protected Double readDouble(int lowerlimit, int upperlimit)
+	protected Double readDouble(int lowerlimit, int upperlimit) 
 	{
 		Double number = null;
 		while(number == null) {
